@@ -66,6 +66,10 @@ spec =
         # s.extensions = FileList["ext/**/extconf.rb"].to_a
     end
 
+task :gemspec do
+  open('what_methods.gemspec', 'w') {|f| f.puts spec.to_ruby }
+end
+
 Rake::GemPackageTask.new(spec) do |p|
     p.need_tar = false
     p.gem_spec = spec
