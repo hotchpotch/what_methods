@@ -23,9 +23,11 @@
 #
 # Last updated: 2006/05/20
 
+require 'timeout'
+
 class Object
-  def what?(*a)
-    WhatMethods::MethodFinder.show(self, *a)
+  def what?(*a, &block)
+    WhatMethods::MethodFinder.show(self, *a, &block)
   end
   alias_method :__clone__, :clone
   def clone
@@ -43,6 +45,7 @@ end
 module WhatMethods
   class MethodFinder
     @@blacklist = %w(daemonize display exec exit! fork sleep system syscall what? ed emacs mate nano vi vim)
+    @@timeout_sec = 0.2
     
     def initialize( obj, *args )
       @obj = obj
@@ -61,8 +64,10 @@ module WhatMethods
             select { |name| anObject.method(name).arity <= args.size }.
             select { |name| not @@blacklist.include? name }.
             select { |name| begin 
-                     anObject.clone.method( name ).call( *args, &block ) == expectedResult; 
-                     rescue Object; end }
+                     timeout(@@timeout_sec) {
+                       anObject.clone.method( name ).call( *args, &block ) == expectedResult; 
+                     }
+                     rescue Object, Timeout::Error; end }
       $stdout, $stderr = stdout, stderr
       res
     end
